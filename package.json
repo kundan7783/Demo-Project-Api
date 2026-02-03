@@ -1,0 +1,21 @@
+{
+  "name": "demo-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "firebase-admin": "^13.6.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.16.2",
+    "twilio": "^5.12.0"
+  }
+}
