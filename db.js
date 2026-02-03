@@ -9,8 +9,7 @@ const myDB = mysql.createPool({
     waitForConnections : true,  
     connectionLimit : 10,    
     queueLimit : 0,         
-    connectTimeout: 20000, 
-    acquireTimeout: 20000  
+    connectTimeout: 20000
 });
 
 async function getCurrentDatabase() {
