@@ -55,26 +55,26 @@ router.get('/', verifyToken, async (req, res, next) => {
     );
 
     if (authRow.length === 0) {
-      return res.status(404).json({
-        message: "Auth not found"
-      });
+      return res.json({ profileExists: false });
     }
 
-    // ❌ Profile not created
-    if (!authRow[0].user_id) {
-      return res.json({
-        profileExists: false,
-        message: "User profile not created"
-      });
+    const userId = authRow[0].user_id;
+
+    // 🔥 SAFE CHECK
+    if (userId === null) {
+      return res.json({ profileExists: false });
     }
 
-    // ✅ Profile exists
     const [userRows] = await myDB.query(
       "SELECT name, email FROM users WHERE id = ?",
-      [authRow[0].user_id]
+      [Number(userId)]
     );
 
-    res.json({
+    if (userRows.length === 0) {
+      return res.json({ profileExists: false });
+    }
+
+    return res.json({
       profileExists: true,
       name: userRows[0].name,
       email: userRows[0].email
@@ -84,6 +84,7 @@ router.get('/', verifyToken, async (req, res, next) => {
     next(error);
   }
 });
+
 
 
 router.put('/', verifyToken, async (req, res, next) => {
