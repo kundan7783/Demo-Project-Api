@@ -9,13 +9,13 @@ function generateTokens(id , auth_type) {
     const accessToken = jwt.sign(
         { id, auth_type },
         process.env.JWT_ACCESS_SECRET,
-        { expiresIn: "30d" }
+        { expiresIn: "2m" }
     );
 
     const refreshToken = jwt.sign(
         { id, auth_type },
         process.env.JWT_REFRESH_SECRET,
-        { expiresIn: "60d" }
+        { expiresIn: "5m" }
     );
 
     return { accessToken, refreshToken };
