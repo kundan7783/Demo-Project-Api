@@ -4,6 +4,7 @@ const express = require('express');
 const app = express(); 
 const authRouters = require('./routes/auth');
 const userRouters = require('./routes/user');
+const interviewRouterrs = require('./routes/interview');
 const errorHandler = require('./middleware/errorHandler');
 
 app.use(express.json()); 
@@ -11,6 +12,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRouters);
 app.use('/api/user', userRouters);
+app.use('/api/interview/',interviewRouterrs);
 
 app.get('/', (req, res) => res.status(200).json({ message: "API Running....." }));
 
