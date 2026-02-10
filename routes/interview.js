@@ -2,7 +2,7 @@ const express = require('express');
 const myDB = require("../db");
 const router = express.Router();
 
-router.post('add',async(req,res,next)=>{
+router.post('/add',async(req,res,next)=>{
    try{
     const {name, age} = req.body;
     await myDB.query(
@@ -16,7 +16,7 @@ router.post('add',async(req,res,next)=>{
     next(error);
    }
 });
-router.get('get',async(req,res,next)=>{
+router.get('/get',async(req,res,next)=>{
     try{
     const [rows] = await myDB.query('SELECT * FROM interview');
     res.status(200).json(rows);
@@ -24,7 +24,7 @@ router.get('get',async(req,res,next)=>{
     next(error);
    }
 });
-router.put('update/:id',async(req,res,next)=>{
+router.put('/update/:id',async(req,res,next)=>{
     try{
     const {name, age} = req.body;
     const { id } = req.params;
@@ -39,7 +39,7 @@ router.put('update/:id',async(req,res,next)=>{
     next(error);
    }
 });
-router.delete('delete/:id',async(req,res,next)=>{
+router.delete('/delete/:id',async(req,res,next)=>{
      try{
       const { id } = req.params;
 
