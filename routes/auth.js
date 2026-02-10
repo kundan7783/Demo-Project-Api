@@ -116,8 +116,10 @@ router.post('/verify-otp',async(req,res,next)=>{
     //         [phone]
     //     );
     //     let authId;
+    //     let profileExists = false;
     //     if(authRow.length > 0){
     //         authId = authRow[0].id;
+    //         profileExists = authRow[0].user_id ? true : false;
     //     }else{
     //         const [result] = await myDB.query(
     //             `INSERT INTO auth (auth_type, phone, is_verified)
@@ -125,6 +127,7 @@ router.post('/verify-otp',async(req,res,next)=>{
     //             [phone]
     //         );
     //         authId = result.insertId;
+    //         profileExists = false;
     //     }
 
     //     const { accessToken, refreshToken } = generateTokens(authId, "phone");
@@ -134,6 +137,7 @@ router.post('/verify-otp',async(req,res,next)=>{
     //         accessToken,
     //         refreshToken,
     //         status: result.status
+    //         profileExists
     //     });
 
 
