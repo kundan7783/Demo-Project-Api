@@ -167,12 +167,10 @@ router.post('/google-login', async (req, res, next) => {
     );
 
     let authId;
-    const profileExists = true;
 
     if (authRow.length > 0) {
       // Existing user
       authId = authRow[0].id;
-       profileExists = authRow[0].user_id ? true : false;
     } else {
       // New user
       const [userResult] = await myDB.query(
@@ -198,7 +196,6 @@ router.post('/google-login', async (req, res, next) => {
       message: "Google login successful",
       accessToken,
       refreshToken,
-      profileExists
     });
 
   } catch (error) {
@@ -226,39 +223,24 @@ router.post('/refresh-token', async (req, res, next) => {
                 });
             }
 
+            
             const { id, auth_type } = decoded;
-
-            // ✅ Fetch user from DB (THIS WAS MISSING)
-            const [authRow] = await myDB.query(
-                "SELECT user_id FROM auth WHERE id = ?",
-                [id]
-            );
-
-            if (!authRow || authRow.length === 0) {
-                return res.status(404).json({
-                    success: false,
-                    message: "User not found"
-                });
-            }
-
-            const profileExists = authRow[0].user_id ? true : false;
-
             const tokens = generateTokens(id, auth_type);
+
 
             return res.json({
                 message: "Token refreshed successfully",
                 accessToken: tokens.accessToken,
-                refreshToken: tokens.refreshToken,
-                profileExists
+                refreshToken: tokens.refreshToken
             });
 
+            
         });
 
     } catch (error) {
         next(error);
     }
 });
-
 
 
 
