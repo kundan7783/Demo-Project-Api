@@ -196,6 +196,7 @@ router.post('/google-login', async (req, res, next) => {
       message: "Google login successful",
       accessToken,
       refreshToken,
+      profileExists: true 
     });
 
   } catch (error) {
