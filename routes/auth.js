@@ -229,8 +229,8 @@ router.post('/refresh-token', async (req, res, next) => {
             const { id, auth_type } = decoded;
 
             // ✅ Fetch user from DB (THIS WAS MISSING)
-            const [authRow] = await db.query(
-                "SELECT user_id FROM users WHERE user_id = ?",
+            const [authRow] = await myDB.query(
+                "SELECT user_id FROM auth WHERE id = ?",
                 [id]
             );
 
