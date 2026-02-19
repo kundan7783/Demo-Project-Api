@@ -217,44 +217,48 @@ router.post('/refresh-token', async (req, res, next) => {
             });
         }
 
-        // Verify refresh token (use promise version)
-        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (error, decoded) => {
 
-        const { id, auth_type } = decoded;
+            if (error) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Expired or invalid refresh token!"
+                });
+            }
 
-        // 🔹 Fetch user from DB to confirm they still exist
-        const [authRow] = await db.query(
-            "SELECT user_id FROM users WHERE user_id = ?",
-            [id]
-        );
+            const { id, auth_type } = decoded;
 
-        if (!authRow || authRow.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: "User not found"
+            // ✅ Fetch user from DB (THIS WAS MISSING)
+            const [authRow] = await db.query(
+                "SELECT user_id FROM users WHERE user_id = ?",
+                [id]
+            );
+
+            if (!authRow || authRow.length === 0) {
+                return res.status(404).json({
+                    success: false,
+                    message: "User not found"
+                });
+            }
+
+            const profileExists = authRow[0].user_id ? true : false;
+
+            const tokens = generateTokens(id, auth_type);
+
+            return res.json({
+                message: "Token refreshed successfully",
+                accessToken: tokens.accessToken,
+                refreshToken: tokens.refreshToken,
+                profileExists
             });
-        }
 
-        const profileExists = !!authRow[0].user_id;
-
-        // 🔹 Generate new tokens
-        const tokens = generateTokens(id, auth_type);
-
-        return res.json({
-            success: true,
-            message: "Token refreshed successfully",
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
-            profileExists
         });
 
     } catch (error) {
-        return res.status(403).json({
-            success: false,
-            message: "Expired or invalid refresh token!"
-        });
+        next(error);
     }
 });
+
 
 
 
