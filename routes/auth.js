@@ -5,15 +5,16 @@ const admin = require("../firebase");
 const myDB = require("../db");
 const router = express.Router();
 
-function generateTokens(id , auth_type) {
+function generateTokens(id, auth_type, profileExists) {
+
     const accessToken = jwt.sign(
-        { id, auth_type },
+        { id, auth_type, profileExists },   // 👈 ADD THIS
         process.env.JWT_ACCESS_SECRET,
         { expiresIn: "2m" }
     );
 
     const refreshToken = jwt.sign(
-        { id, auth_type },
+        { id, auth_type },  // 👈 refresh me profile daalne ki zarurat nahi
         process.env.JWT_REFRESH_SECRET,
         { expiresIn: "5m" }
     );
@@ -90,7 +91,7 @@ router.post('/verify-otp',async(req,res,next)=>{
       profileExists = false;
     }
 
-    const { accessToken, refreshToken } = generateTokens(authId, "phone");
+   const { accessToken, refreshToken } = generateTokens( authId,"phone",profileExists);
 
     return res.json({
       message: "OTP Verified Successfully (Testing Mode)",
@@ -167,10 +168,12 @@ router.post('/google-login', async (req, res, next) => {
     );
 
     let authId;
+    let profileExists = false;
 
     if (authRow.length > 0) {
       // Existing user
       authId = authRow[0].id;
+      profileExists = authRow[0].user_id ? true : false;
     } else {
       // New user
       const [userResult] = await myDB.query(
@@ -187,16 +190,17 @@ router.post('/google-login', async (req, res, next) => {
       );
 
       authId = authResult.insertId;
+      profileExists = true;
     }
 
     // ✅ JWT generate (IMPORTANT)
-    const { accessToken, refreshToken } = generateTokens(authId, "google");
+    const { accessToken, refreshToken } = generateTokens(authId, "google", profileExists);
 
     return res.json({
       message: "Google login successful",
       accessToken,
       refreshToken,
-      profileExists: true 
+      profileExists
     });
 
   } catch (error) {
@@ -205,43 +209,62 @@ router.post('/google-login', async (req, res, next) => {
 });
 
 router.post('/refresh-token', async (req, res, next) => {
-    try {
-        const { refreshToken } = req.body;
+  try {
+    const { refreshToken } = req.body;
 
-        if (!refreshToken) {
-            return res.status(400).json({
-                success: false,
-                message: "Refresh token is required"
-            });
+    if (!refreshToken) {
+      return res.status(400).json({
+        success: false,
+        message: "Refresh token is required"
+      });
+    }
+
+    // 🔐 Verify Refresh Token
+    jwt.verify(
+      refreshToken,
+      process.env.JWT_REFRESH_SECRET,
+      async (error, decoded) => {
+
+        if (error) {
+          return res.status(403).json({
+            success: false,
+            message: "Expired or invalid refresh token!"
+          });
         }
 
-        jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (error, decoded) => {
+        const { id, auth_type } = decoded;
 
-            if (error) {
-                return res.status(403).json({
-                    success: false,
-                    message: "Expired or invalid refresh token!"
-                });
-            }
+        // 🔎 DB se latest profile status nikaalo
+        const [authRow] = await myDB.query(
+          "SELECT user_id FROM auth WHERE id = ?",
+          [id]
+        );
 
-            
-            const { id, auth_type } = decoded;
-            const tokens = generateTokens(id, auth_type);
+        if (authRow.length === 0) {
+          return res.status(404).json({
+            success: false,
+            message: "User not found"
+          });
+        }
 
+        const profileExists = authRow[0].user_id ? true : false;
 
-            return res.json({
-                message: "Token refreshed successfully",
-                accessToken: tokens.accessToken,
-                refreshToken: tokens.refreshToken
-            });
+        // 🆕 Naya token generate karo WITH profileExists
+        const tokens = generateTokens(id, auth_type, profileExists);
 
-            
+        return res.json({
+          message: "Token refreshed successfully",
+          accessToken: tokens.accessToken,
+          refreshToken: tokens.refreshToken
         });
+      }
+    );
 
-    } catch (error) {
-        next(error);
-    }
+  } catch (error) {
+    next(error);
+  }
 });
+
 
 
 
