@@ -217,32 +217,42 @@ router.post('/refresh-token', async (req, res, next) => {
             });
         }
 
-        jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET, async (error, decoded) => {
+        // Verify refresh token (use promise version)
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-            if (error) {
-                return res.status(403).json({
-                    success: false,
-                    message: "Expired or invalid refresh token!"
-                });
-            }
+        const { id, auth_type } = decoded;
 
-             const profileExists = authRow[0].user_id ? true : false;
-            const { id, auth_type } = decoded;
-            const tokens = generateTokens(id, auth_type);
+        // 🔹 Fetch user from DB to confirm they still exist
+        const [authRow] = await db.query(
+            "SELECT user_id FROM users WHERE user_id = ?",
+            [id]
+        );
 
-
-            return res.json({
-                message: "Token refreshed successfully",
-                accessToken: tokens.accessToken,
-                refreshToken: tokens.refreshToken,
-                profileExists 
+        if (!authRow || authRow.length === 0) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found"
             });
+        }
 
-            
+        const profileExists = !!authRow[0].user_id;
+
+        // 🔹 Generate new tokens
+        const tokens = generateTokens(id, auth_type);
+
+        return res.json({
+            success: true,
+            message: "Token refreshed successfully",
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            profileExists
         });
 
     } catch (error) {
-        next(error);
+        return res.status(403).json({
+            success: false,
+            message: "Expired or invalid refresh token!"
+        });
     }
 });
 
