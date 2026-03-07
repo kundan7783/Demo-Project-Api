@@ -2,56 +2,108 @@ const express = require('express');
 const myDB = require("../db");
 const router = express.Router();
 
-router.post('/add',async(req,res,next)=>{
-   try{
-    const {name, age} = req.body;
-    await myDB.query(
-        'INSERT INTO interview (name, age) VALUES (?, ?)',
-        [name,age]
-    );
-    res.status(201).json({
-        message : "Add User Successfully..."
-    });
-   }catch(error){
-    next(error);
-   }
-});
-router.get('/get',async(req,res,next)=>{
-    try{
-    const [rows] = await myDB.query('SELECT * FROM interview');
-    res.status(200).json(rows);
-   }catch(error){
-    next(error);
-   }
-});
-router.put('/update/:id',async(req,res,next)=>{
-    try{
-    const {name, age} = req.body;
-    const { id } = req.params;
-    await myDB.query(
-       'UPDATE interview SET name = ?, age = ? WHERE id = ?',
-      [name, age, id]
-    );
-    res.status(200).json({
-        message : "Update User Successfully..."
-    });
-   }catch(error){
-    next(error);
-   }
-});
-router.delete('/delete/:id',async(req,res,next)=>{
-     try{
-      const { id } = req.params;
+router.post('/add', async (req, res, next) => {
+  try {
+    const { name, age } = req.body;
+
+    if (!name || !age) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and Age are required"
+      });
+    }
 
     await myDB.query(
+      'INSERT INTO interview (name, age) VALUES (?, ?)',
+      [name, age]
+    );
+
+    res.status(201).json({
+      success: true,
+      message: "Add User Successfully..."
+    });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/get', async (req, res, next) => {
+  try {
+
+    const [rows] = await myDB.query('SELECT * FROM interview');
+
+   res.status(200).json({
+        success: true,
+        message: "Users fetched successfully",
+        data: rows
+    });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.put('/update/:id', async (req, res, next) => {
+  try {
+
+    const { name, age } = req.body;
+    const { id } = req.params;
+
+    if (!name || !age) {
+      return res.status(400).json({
+        success: false,
+        message: "Name and Age are required"
+      });
+    }
+
+    const [result] = await myDB.query(
+      'UPDATE interview SET name = ?, age = ? WHERE id = ?',
+      [name, age, id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Update User Successfully..."
+    });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.delete('/delete/:id', async (req, res, next) => {
+  try {
+
+    const { id } = req.params;
+
+    const [result] = await myDB.query(
       'DELETE FROM interview WHERE id = ?',
       [id]
     );
 
-    res.json({ message: 'delete User Successfully...' });
-   }catch(error){
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Delete User Successfully...'
+    });
+
+  } catch (error) {
     next(error);
-   }
+  }
 });
 
 module.exports = router;
