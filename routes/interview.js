@@ -71,17 +71,18 @@ router.put('/update/:id', async (req, res, next) => {
       return res.status(404).json({
         success: false,
         message: "User not found",
-        data: {
-        id,
-        name,
-        age
-      }
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Update User Successfully..."
+      message: "Update User Successfully...",
+       data: {
+        id,
+        name,
+        age
+      }
+
     });
 
   } catch (error) {
