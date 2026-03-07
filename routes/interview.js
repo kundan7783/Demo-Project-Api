@@ -20,7 +20,12 @@ router.post('/add', async (req, res, next) => {
 
     res.status(201).json({
       success: true,
-      message: "Add User Successfully..."
+      message: "Add User Successfully...",
+      data: {
+        id: result.insertId,
+        name,
+        age
+      }
     });
 
   } catch (error) {
@@ -65,7 +70,12 @@ router.put('/update/:id', async (req, res, next) => {
     if (result.affectedRows === 0) {
       return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: "User not found",
+        data: {
+        id,
+        name,
+        age
+      }
       });
     }
 
