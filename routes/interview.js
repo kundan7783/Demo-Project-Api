@@ -4,6 +4,7 @@ const router = express.Router();
 
 router.post('/add', async (req, res, next) => {
   try {
+
     const { name, age } = req.body;
 
     if (!name || !age) {
@@ -13,7 +14,7 @@ router.post('/add', async (req, res, next) => {
       });
     }
 
-    await myDB.query(
+    const [result] = await myDB.query(
       'INSERT INTO interview (name, age) VALUES (?, ?)',
       [name, age]
     );
