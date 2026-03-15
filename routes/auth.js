@@ -5,10 +5,10 @@ const admin = require("../firebase");
 const myDB = require("../db");
 const router = express.Router();
 
-function generateTokens(id, auth_type, profileExists) {
+function generateTokens(id, auth_type) {
 
     const accessToken = jwt.sign(
-        { id, auth_type, profileExists },   // 👈 ADD THIS
+        {id, auth_type },   // 👈 ADD THIS
         process.env.JWT_ACCESS_SECRET,
         { expiresIn: "2m" }
     );
@@ -91,7 +91,7 @@ router.post('/verify-otp',async(req,res,next)=>{
       profileExists = false;
     }
 
-   const { accessToken, refreshToken } = generateTokens( authId,"phone",profileExists);
+   const { accessToken, refreshToken } = generateTokens( authId,"phone");
 
     return res.json({
       message: "OTP Verified Successfully (Testing Mode)",
@@ -194,7 +194,7 @@ router.post('/google-login', async (req, res, next) => {
     }
 
     // ✅ JWT generate (IMPORTANT)
-    const { accessToken, refreshToken } = generateTokens(authId, "google", profileExists);
+    const { accessToken, refreshToken } = generateTokens(authId, "google");
 
     return res.json({
       message: "Google login successful",
@@ -224,7 +224,7 @@ router.post('/refresh-token', async (req, res, next) => {
       refreshToken,
       process.env.JWT_REFRESH_SECRET,
       async (error, decoded) => {
-
+        
         if (error) {
           return res.status(403).json({
             success: false,
@@ -247,10 +247,10 @@ router.post('/refresh-token', async (req, res, next) => {
           });
         }
 
-        const profileExists = authRow[0].user_id ? true : false;
+    
 
         // 🆕 Naya token generate karo WITH profileExists
-        const tokens = generateTokens(id, auth_type, profileExists);
+        const tokens = generateTokens(id, auth_type);
 
         return res.json({
           message: "Token refreshed successfully",
@@ -259,6 +259,34 @@ router.post('/refresh-token', async (req, res, next) => {
         });
       }
     );
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get('/splash', verifyAuthToken, async (req, res, next) => {
+  try {
+
+    const authId = req.user.id;
+
+    const [rows] = await myDB.query(
+      "SELECT user_id FROM auth WHERE id = ?",
+      [authId]
+    );
+
+    // agar auth record hi nahi mila
+    if (rows.length === 0) {
+      return res.json({ profileExists: false });
+    }
+
+    // agar user_id null hai → profile create nahi hua
+    const profileExists = rows[0].user_id ? true : false;
+
+    return res.json({
+      profileExists
+    });
 
   } catch (error) {
     next(error);
