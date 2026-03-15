@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require("jsonwebtoken");
 const { client, service } = require('../twilioConfig');
+const verifyToken = require("../middleware/authHandler");
 const admin = require("../firebase");
 const myDB = require("../db");
 const router = express.Router();
@@ -266,7 +267,7 @@ router.post('/refresh-token', async (req, res, next) => {
 });
 
 
-router.get('/splash', verifyAuthToken, async (req, res, next) => {
+router.get('/splash', verifyToken, async (req, res, next) => {
   try {
 
     const authId = req.user.id;
