@@ -3,7 +3,7 @@ const jwt = require("jsonwebtoken");
 const { client, service } = require('../twilioConfig');
 const verifyToken = require("../middleware/authHandler");
 const { OAuth2Client } = require('google-auth-library');
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const myDB = require("../db");
 const router = express.Router();
 
@@ -159,7 +159,7 @@ router.post('/google-login', async (req, res, next) => {
     }
 
     // ✅ Verify Google ID Token
-    const ticket = await client.verifyIdToken({
+    const ticket = await googleClient.verifyIdToken({
       idToken: token,
       audience: process.env.GOOGLE_CLIENT_ID,
     });
