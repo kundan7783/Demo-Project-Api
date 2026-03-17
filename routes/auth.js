@@ -24,7 +24,6 @@ function generateTokens(id, auth_type) {
     return { accessToken, refreshToken };
 }
 
-const TESTING_NUMBER = "7783065335";
 const TESTING_OTP = "123456";
 
 router.post('/send-otp',async(req,res,next)=>{
