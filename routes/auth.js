@@ -2,7 +2,8 @@ const express = require('express');
 const jwt = require("jsonwebtoken");
 const { client, service } = require('../twilioConfig');
 const verifyToken = require("../middleware/authHandler");
-const admin = require("../firebase");
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 const myDB = require("../db");
 const router = express.Router();
 
@@ -148,20 +149,27 @@ router.post('/verify-otp',async(req,res,next)=>{
   }
 });
 
+
 router.post('/google-login', async (req, res, next) => {
   try {
     const { token } = req.body;
 
     if (!token) {
-      return res.json({ message: "Firebase token required" });
+      return res.json({ message: "Google token required" });
     }
 
-    // Verify Firebase token
-    const decoded = await admin.auth().verifyIdToken(token);
+    // ✅ Verify Google ID Token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
 
-    const googleId = decoded.uid;
-    const name = decoded.name;
-    const email = decoded.email;
+    const payload = ticket.getPayload();
+
+    // 👇 Ye data Google se aata hai
+    const googleId = payload.sub;   // unique id
+    const name = payload.name;
+    const email = payload.email;
 
     const [authRow] = await myDB.query(
       "SELECT * FROM auth WHERE google_id = ?",
@@ -194,7 +202,7 @@ router.post('/google-login', async (req, res, next) => {
       profileExists = true;
     }
 
-    // ✅ JWT generate (IMPORTANT)
+    // ✅ JWT generate
     const { accessToken, refreshToken } = generateTokens(authId, "google");
 
     return res.json({
