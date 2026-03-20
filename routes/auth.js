@@ -26,6 +26,79 @@ function generateTokens(id, auth_type) {
 
 const TESTING_OTP = "123456";
 
+
+
+
+router.post('/google-login', async (req, res, next) => {
+  try {
+    const { token } = req.body;
+
+    if (!token) {
+      return res.json({ message: "Google token required" });
+    }
+
+    // ✅ Verify Google ID Token
+    const ticket = await googleClient.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    // 👇 Ye data Google se aata hai
+    const googleId = payload.sub;   // unique id
+    const name = payload.name;
+    const email = payload.email;
+
+    const [authRow] = await myDB.query(
+      "SELECT * FROM auth WHERE google_id = ?",
+      [googleId]
+    );
+
+    let authId;
+    let profileExists = false;
+
+    if (authRow.length > 0) {
+      // Existing user
+      authId = authRow[0].id;
+      profileExists = authRow[0].user_id ? true : false;
+    } else {
+      // New user
+      const [userResult] = await myDB.query(
+        "INSERT INTO users (name, email) VALUES (?, ?)",
+        [name, email]
+      );
+
+      const userId = userResult.insertId;
+
+      const [authResult] = await myDB.query(
+        `INSERT INTO auth (user_id, auth_type, google_id, is_verified)
+         VALUES (?, 'google', ?, 1)`,
+        [userId, googleId]
+      );
+
+      authId = authResult.insertId;
+      profileExists = true;
+    }
+
+    // ✅ JWT generate
+    const { accessToken, refreshToken } = generateTokens(authId, "google");
+
+    return res.json({
+      message: "Google login successful",
+      accessToken,
+      refreshToken,
+      profileExists
+    });
+
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+
+
 router.post('/send-otp',async(req,res,next)=>{
    try{
         let { phone } = req.body;
@@ -58,6 +131,7 @@ router.post('/send-otp',async(req,res,next)=>{
      next(error);
    }
 });
+
 
 router.post('/verify-otp',async(req,res,next)=>{
   try{
@@ -148,73 +222,6 @@ router.post('/verify-otp',async(req,res,next)=>{
   }
 });
 
-
-router.post('/google-login', async (req, res, next) => {
-  try {
-    const { token } = req.body;
-
-    if (!token) {
-      return res.json({ message: "Google token required" });
-    }
-
-    // ✅ Verify Google ID Token
-    const ticket = await googleClient.verifyIdToken({
-      idToken: token,
-      audience: process.env.GOOGLE_CLIENT_ID,
-    });
-
-    const payload = ticket.getPayload();
-
-    // 👇 Ye data Google se aata hai
-    const googleId = payload.sub;   // unique id
-    const name = payload.name;
-    const email = payload.email;
-
-    const [authRow] = await myDB.query(
-      "SELECT * FROM auth WHERE google_id = ?",
-      [googleId]
-    );
-
-    let authId;
-    let profileExists = false;
-
-    if (authRow.length > 0) {
-      // Existing user
-      authId = authRow[0].id;
-      profileExists = authRow[0].user_id ? true : false;
-    } else {
-      // New user
-      const [userResult] = await myDB.query(
-        "INSERT INTO users (name, email) VALUES (?, ?)",
-        [name, email]
-      );
-
-      const userId = userResult.insertId;
-
-      const [authResult] = await myDB.query(
-        `INSERT INTO auth (user_id, auth_type, google_id, is_verified)
-         VALUES (?, 'google', ?, 1)`,
-        [userId, googleId]
-      );
-
-      authId = authResult.insertId;
-      profileExists = true;
-    }
-
-    // ✅ JWT generate
-    const { accessToken, refreshToken } = generateTokens(authId, "google");
-
-    return res.json({
-      message: "Google login successful",
-      accessToken,
-      refreshToken,
-      profileExists
-    });
-
-  } catch (error) {
-    next(error);
-  }
-});
 
 router.post('/refresh-token', async (req, res, next) => {
   try {
