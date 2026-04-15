@@ -37,7 +37,6 @@ router.post('/', verifyToken, async (req, res, next) => {
 
     res.json({
       message: "User profile created successfully",
-      user_id: userId
     });
 
   } catch (error) {
